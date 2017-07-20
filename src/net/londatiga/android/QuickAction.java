@@ -3,6 +3,7 @@ package net.londatiga.android;
 import android.content.Context;
 
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 
 import android.widget.ImageView;
@@ -217,6 +218,19 @@ public class QuickAction extends PopupWindows implements OnDismissListener {
 	}
 	
 	/**
+	 * Remove all ActionItems from a QuickAction object
+	 */
+	public void removeAllActionItems() {
+		// Reset mChildPos
+		mChildPos = 0;
+		// Reset mInsertPos
+		mInsertPos = 0;
+		// remove the ActionItem views from the ViewGroup
+		mTrack.removeAllViews();
+		actionItems.clear();
+	}
+
+	/**
 	 * Show quickaction popup. Popup is automatically positioned, on top or bottom of anchor view.
 	 * 
 	 */
@@ -291,6 +305,61 @@ public class QuickAction extends PopupWindows implements OnDismissListener {
 		setAnimationStyle(screenWidth, anchorRect.centerX(), onTop);
 		
 		mWindow.showAtLocation(anchor, Gravity.NO_GRAVITY, xPos, yPos);
+	}
+
+	/**
+	 * Show quick action popup above or below the anchorRect
+	 *
+	 * @param parent of the popup view
+	 * @param anchorRect to display popup above or below
+	 */
+	public void show(View parent, RectF anchorRect) {
+		preShow();
+		float xPos;
+		float yPos;
+		float arrowPos;
+		mDidAction          = false;
+		mRootView.measure(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+		int rootHeight      = mRootView.getMeasuredHeight();
+		if (rootWidth == 0) {
+			rootWidth       = mRootView.getMeasuredWidth();
+		}
+		int screenWidth     = mWindowManager.getDefaultDisplay().getWidth();
+		int screenHeight    = mWindowManager.getDefaultDisplay().getHeight();
+		//automatically get X coord of popup (top left)
+		if ((anchorRect.left + rootWidth) > screenWidth) {
+			xPos        = anchorRect.left - (rootWidth-anchorRect.width());
+			xPos        = (xPos < 0) ? 0 : xPos;
+			arrowPos    = anchorRect.centerX()-xPos;
+		} else {
+			if (anchorRect.width() > rootWidth) {
+				xPos = anchorRect.centerX() - (rootWidth/2);
+			} else {
+				xPos = anchorRect.left;
+			}
+			arrowPos = anchorRect.centerX()-xPos;
+		}
+		float dyTop           = anchorRect.top;
+		float dyBottom        = screenHeight - anchorRect.bottom;
+		boolean onTop       = (dyTop > dyBottom) ? true : false;
+		if (onTop) {
+			if (rootHeight > dyTop) {
+				yPos            = 15;
+				LayoutParams l  = mScroller.getLayoutParams();
+				l.height        = (int) (dyTop - anchorRect.height());
+			} else {
+				yPos = anchorRect.top - rootHeight;
+			}
+		} else {
+			yPos = anchorRect.bottom;
+			if (rootHeight > dyBottom) {
+				LayoutParams l  = mScroller.getLayoutParams();
+				l.height        = (int) dyBottom;
+			}
+		}
+		showArrow(((onTop) ? R.id.arrow_down : R.id.arrow_up), (int) arrowPos);
+		setAnimationStyle(screenWidth, (int) anchorRect.centerX(), onTop);
+		mWindow.showAtLocation(parent, Gravity.NO_GRAVITY, (int) xPos, (int) yPos);
 	}
 	
 	/**
